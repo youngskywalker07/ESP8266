@@ -1,129 +1,31 @@
-#include <Arduino.h>
 #include <ESP8266WiFi.h>
 
-const bool debug = true;
-const int loopDelay = 60 * 1000;
-
-//WiFi connection
-const char *ssid = "";          // your wifi SSID
-const char *password = ""; //  Your WiFi password
-
-bool connectToWiFi(int timeout = 60000);
-bool isIpFyAvailable();
-String getPublicIP(int timeout = 5000);
-void log(String message, int8 part = -1);
-
-WiFiClient wifiClient;
-String ipfyAddress = String("api.ipify.org");
-unsigned long abortTime;
-String ip;
-
-void setup()
-{
-  delay(2000); // for things to catch up
+  const char* wifiName = "skywalker";
+  const char* wifiPass = "kugisaki";
+  
+// the setup function runs once when you press reset or power the board
+void setup() {
   Serial.begin(115200);
+  delay(10);
+  // We start by connecting to a WiFi network
+  Serial.println();
 
-  log("");
-  log("Starting up...");
+  Serial.print("Connecting to ");
+  Serial.println(wifiName);
 
-  // -- Connect to Wi-Fi
-  if (!connectToWiFi())
-  {
-    delay(30000); // wait for 30 seconds and reboot
-    ESP.restart();
+  WiFi.begin(wifiName, wifiPass);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
 
-  // -- Make sure IpiFy is available
-  if (!isIpFyAvailable())
-  {
-    log("Hmmm... IpiFy is not available! Aborting...");
-    return;
-  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
-void loop()
-{
-  // make sure WiFi is connected
-  if (WiFi.status() != WL_CONNECTED)
-    connectToWiFi();
-
-  // get the IP
-  if (wifiClient.connected())
-    log(getPublicIP());
-
-  delay(loopDelay);
-}
-
-bool connectToWiFi(int timeout)
-{
-  abortTime = millis() + timeout;
-  WiFi.begin(ssid, password);
-  log("Connecting to " + String(ssid) + " ...");
-
-  while (WiFi.status() != WL_CONNECTED && (abortTime > millis()))
-  {
-    delay(1000);
-    log(".", 1);
-  }
-
-  if (abortTime > millis())
-  {
-    log("connected at:", 1);
-    Serial.println(WiFi.localIP());
-    return true;
-  }
-  else
-  {
-    log(" timedout :(", 2);
-    return false;
-  }
-}
-
-bool isIpFyAvailable()
-{
-  return wifiClient.connect(ipfyAddress, 80);
-}
-
-String getPublicIP(int timeout)
-{
-  abortTime = millis() + timeout;
-  wifiClient.println("GET / HTTP/1.1");
-  wifiClient.println("Host: " + ipfyAddress);
-  wifiClient.println();
-  delay(5000);
-
-  while (wifiClient.available())
-  {
-    if (abortTime > millis())
-    {
-      log("!!! Wifi Client Timedout!");
-      wifiClient.stop();
-      return "";
-    }
-
-    ip = wifiClient.readStringUntil('\n');
-  }
-
-  return ip;
-}
-
-/**
- * Print message to Serial 
- * 
- * @message message to print
- * @part [-1, 0, 1, 2] -1: println. 0: Start of a new line, 1: middle part of the line, 2: end of the line
- */
-void log(String message, int8 part)
-{
-  if (debug)
-  {
-    if (part == -1)
-      Serial.println("[PIP] " + message);
-    else if (part == 0)
-      Serial.print("[PIP] " + message);
-    else if (part == 1)
-      Serial.print(message);
-    else if (part == 2)
-      Serial.println(message);
-  }
+// the loop function runs over and over again forever
+void loop() {
 }
